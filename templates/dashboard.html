@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+
+    <!-- 03/22 - Auto refresh every 5 seconds -->
+    <meta http-equiv="refresh" content="5">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <img src="/static/home_icon.png" alt="Home" class="icon">
+            <a class="active" href="/dashboard">Dashboard</a>
+            <a href="/devices">Devices</a>
+            <a href="/reports">Reports</a>
+            <a href="/settings">Settings</a>
+        </div>
+
+        <div class="main">
+            <h2>Dashboard</h2>
+
+            <!-- 03/22 - Summary Tiles (LIVE DATA) -->
+            <div class="summary">
+                <div class="tile">
+                    Current Voltage<br>
+                    <strong>
+                        {% if readings %}
+                            {{ readings[0][2] }} V
+                        {% else %}
+                            No data
+                        {% endif %}
+                    </strong>
+                </div>
+
+                <div class="tile">
+                    Current Current<br>
+                    <strong>
+                        {% if readings %}
+                            {{ readings[0][3] }} A
+                        {% else %}
+                            No data
+                        {% endif %}
+                    </strong>
+                </div>
+
+                <div class="tile">
+                    Current Power<br>
+                    <strong>
+                        {% if readings %}
+                            {{ readings[0][2] * readings[0][3] }} W
+                        {% else %}
+                            No data
+                        {% endif %}
+                    </strong>
+                </div>
+            </div>
+
+            <!-- 03/22 - Recent Readings Table -->
+            <h3>Recent Readings</h3>
+            <table border="1" cellpadding="5">
+                <tr>
+                    <th>Device</th>
+                    <th>Timestamp</th>
+                    <th>Voltage (V)</th>
+                    <th>Current (A)</th>
+                    <th>Power (W)</th>
+                </tr>
+
+                {% for r in readings %}
+                <tr>
+                    <td>{{ r[0] }}</td>
+                    <td>{{ r[1] }}</td>
+                    <td>{{ r[2] }}</td>
+                    <td>{{ r[3] }}</td>
+                    <td>{{ r[2] * r[3] }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+
+            <div class="graph-section">
+                <div class="graph">
+                    <h3>Overall Energy Usage (kWh)</h3>
+                    <img src="/static/overall_graph.png" alt="Overall Energy Usage">
+                </div>
+
+                <div class="recommendations">
+                    <h3>Recommendations:</h3>
+                    <ul>
+                        <li>Turn the TV off when not used</li>
+                        <li>Switch TV to power saving mode</li>
+                        <li>Replace your fan with energy-efficient model</li>
+                        <li>Reduce the energy usage of your lamp</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="graph-section">
+                <div class="graph">
+                    <h3>Individual Energy Usage (kWh)</h3>
+                    <img src="/static/individual_graph.png" alt="Individual Energy Usage">
+                </div>
+            </div>
+
+            <p><em>*Note: The graphs display daily/weekly kWh used</em></p>
+        </div>
+    </div>
+</body>
+</html>

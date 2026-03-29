@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reports</title>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <img src="/static/home_icon.png" alt="Home" class="icon">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/devices">Devices</a>
+            <a class="active" href="/reports">Reports</a>
+            <a href="/settings">Settings</a>
+        </div>
+        <div class="main">
+            <h2>Reports</h2>
+            <div class="summary">
+                <div class="tile">07/10 - 07/17/24</div>
+                <div class="tile">⤓</div>
+            </div>
+            <div class="graph-section">
+                <div class="graph">
+                    <h3>Overall Energy Usage (kWh)</h3>
+                    <img src="/static/overall_graph.png" alt="Overall Energy Usage">
+                </div>
+                <div class="recommendations">
+                    <h3>Anomalies:</h3>
+                    <ul>
+                        <li>07/11 - Stove (Excess Energy Use)</li>
+                        <li>07/14 - Fan (Old Model)</li>
+                        <li>07/17 - Microwave (Old Model)</li>
+                        <li>07/19 - Lamp (Excess Energy Use)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="graph-section">
+                <div class="graph">
+                    <h3>Individual Energy Usage (kWh)</h3>
+                    <img src="/static/individual_graph.png" alt="Individual Energy Usage">
+                </div>
+            </div>
+            <p><em>*Note: The graphs display kWh used based on timeframe</em></p>
+        </div>
+    </div>
+</body>
+</html>
