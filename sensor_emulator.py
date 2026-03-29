@@ -27,6 +27,12 @@ device_id_map = {
     "Lamp": 3
 }
 
+device_type_map = {
+    "TV": "appliance",
+    "Heater": "appliance",
+    "Lamp": "appliance"
+}
+
 # 03/22 - Keep previous values to create gradual change (state)
 device_state = {
     "TV": {"voltage": 115, "current": 2},
@@ -52,6 +58,8 @@ while True:
 
         data = {
             "device_id": device_id_map[name],
+            "device_name": name,
+            "device_type": device_type_map[name],
             "timestamp": time.time(),
             "voltage": round(new_v, 2),
             "current": round(new_c, 2)

@@ -12,6 +12,9 @@ from fastapi.templating import Jinja2Templates
 import sqlite3
 import os
 
+# Import graph generator
+from generate_graphs import generate_graphs
+
 DB_PATH = "sensor_data.db" # database file
 
 # Make sure the database exists & the tables (devices & sensor_data) are ready
@@ -32,6 +35,13 @@ async def receive_sensor_data(request: Request):
     data = await request.json() # convert JSON to Python
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+
+    # Entire Device Info:
+    cursor.execute("""
+        INSERT OR IGNORE INTO devices (id, name, type)
+        VALUES (?, ?, ?)
+    """, (data["device_id"], data["device_name"], data["device_type"]))
+
     cursor.execute("""
         INSERT INTO sensor_data (device_id, timestamp, voltage, current)
         VALUES (?, ?, ?, ?)
@@ -91,6 +101,10 @@ async def home(request: Request):
 # Dashboard route
 @app.get("/dashboard", response_class=HTMLResponse) # When /dashboard is accessed return html
 async def get_dashboard(request: Request):
+    
+    # Generate graphs each time dashboard loads
+    generate_graphs()
+
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
