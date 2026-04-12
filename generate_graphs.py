@@ -7,6 +7,7 @@ def generate_graphs():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
+    # Overall Graph:
     cursor.execute("""
         SELECT timestamp, voltage, current
         FROM sensor_data
@@ -14,12 +15,11 @@ def generate_graphs():
     """)
 
     data = cursor.fetchall()
-    conn.close()
 
     if not data:
         return
 
-    timestamps = [row[0] for row in data]
+    timestamps = list(range(len(data)))
     power = [row[1] * row[2] for row in data]
 
     timestamps.reverse()
@@ -33,4 +33,28 @@ def generate_graphs():
     plt.savefig("static/overall_graph.png")
     plt.close()
 
-generate_graphs()
+    # Individual Graphs:
+    cursor.execute("""
+        SELECT d.name, SUM(r.voltage * r.current)
+        FROM sensor_data r
+        JOIN devices d ON r.device_id = d.id
+        GROUP BY d.name
+    """)
+
+    device_data = cursor.fetchall()
+
+    # conn.close()
+
+    if device_data:
+        devices = [row[0] for row in device_data]
+        energy = [row[1] / 1000 for row in device_data]  # Convert to kWh approx
+
+        plt.figure()
+        plt.bar(devices, energy)
+        plt.title("Individual Energy Usage (kWh)")
+        plt.xlabel("Device")
+        plt.ylabel("Energy (kWh)")
+        plt.savefig("static/individual_graph.png")
+        plt.close()
+
+    conn.close()

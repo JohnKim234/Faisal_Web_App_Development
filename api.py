@@ -14,6 +14,7 @@ import os
 
 # Import graph generator
 from generate_graphs import generate_graphs
+from recommendations import generate_recommendations
 
 DB_PATH = "sensor_data.db" # database file
 
@@ -102,8 +103,11 @@ async def home(request: Request):
 @app.get("/dashboard", response_class=HTMLResponse) # When /dashboard is accessed return html
 async def get_dashboard(request: Request):
     
-    # Generate graphs each time dashboard loads
-    generate_graphs()
+    # Generate graphs each time dashboard loads [REPLACED BY: background_tasks.py]
+    # generate_graphs()
+    # generate_recommendations()
+
+    recommendations = generate_recommendations()
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -129,7 +133,8 @@ async def get_dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "readings": readings,
-        "power": round(latest_power, 2)
+        "power": round(latest_power, 2),
+        "recommendations": recommendations
     })
 
 # get_dashboard in a nutshell:

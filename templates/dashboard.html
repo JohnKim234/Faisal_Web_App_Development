@@ -4,7 +4,7 @@
     <title>Dashboard</title>
 
     <!-- 03/22 - Auto refresh every 5 seconds -->
-    <meta http-equiv="refresh" content="5">
+    <!--<meta http-equiv="refresh" content="5"> -->
 </head>
 <body>
     <div class="container">
@@ -80,16 +80,29 @@
             <div class="graph-section">
                 <div class="graph">
                     <h3>Overall Energy Usage (kWh)</h3>
-                    <img src="/static/overall_graph.png" alt="Overall Energy Usage">
+                    <img src="/static/overall_graph.png?" id="overallGraph" alt="Overall Energy Usage">
+<script>
+    function refreshImages() {
+        var overall = document.getElementById("overallGraph");
+        var individual = document.getElementById("individualGraph");
+
+        var timestamp = new Date().getTime();
+
+        overall.src = "/static/overall_graph.png?t=" + timestamp;
+        individual.src = "/static/individual_graph.png?t=" + timestamp;
+    }
+    // Optional: call the function when needed, or on an interval
+    setInterval(refreshImages, 5000);
+</script>
+
                 </div>
 
                 <div class="recommendations">
                     <h3>Recommendations:</h3>
                     <ul>
-                        <li>Turn the TV off when not used</li>
-                        <li>Switch TV to power saving mode</li>
-                        <li>Replace your fan with energy-efficient model</li>
-                        <li>Reduce the energy usage of your lamp</li>
+                    {% for r in recommendations %}
+                        <li>{{ r }}</li>
+                    {% endfor %}
                     </ul>
                 </div>
             </div>
@@ -97,7 +110,7 @@
             <div class="graph-section">
                 <div class="graph">
                     <h3>Individual Energy Usage (kWh)</h3>
-                    <img src="/static/individual_graph.png" alt="Individual Energy Usage">
+                    <img src="/static/individual_graph.png?" id="individualGraph" alt="Individual Energy Usage">
                 </div>
             </div>
 
