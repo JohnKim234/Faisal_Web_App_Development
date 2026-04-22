@@ -11,6 +11,18 @@ import sqlite3
 
 DB_PATH = "sensor_data.db"
 
+def _ensure_devices_columns(cursor):
+    cursor.execute("PRAGMA table_info(devices)")
+    existing = {row[1] for row in cursor.fetchall()}
+
+    # Saves device ON/OFF states
+    if "is_active" not in existing:
+        cursor.execute("ALTER TABLE devices ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1")
+
+    # Adds an extra column to display the per-device warning threshold
+    if "power_threshold_watts" not in existing:
+        cursor.execute("ALTER TABLE devices ADD COLUMN power_threshold_watts REAL NOT NULL DEFAULT 1200")
+
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -20,7 +32,9 @@ def init_db():
     CREATE TABLE IF NOT EXISTS devices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        type TEXT NOT NULL
+        type TEXT NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        power_threshold_watts REAL NOT NULL DEFAULT 1200
     )
     """)
 
@@ -38,7 +52,10 @@ def init_db():
     # Key Term --> FOREIGN KEY: Links readings to specific devices
     # Nutshell: Create a new data table, "sensor_data," that assign a unique ID for each data point.
     # Each data point will store the time, voltage, and current at that very instance    
-    
+
+    # Added so existing DBs get new columns safely
+    _ensure_devices_columns(cursor)
+
     # Add one default device (id=1)
     cursor.execute("""
     INSERT OR IGNORE INTO devices (id, name, type)

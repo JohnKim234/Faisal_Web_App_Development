@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Devices</title>
+    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
     <div class="container">
@@ -12,28 +13,60 @@
             <a href="/reports">Reports</a>
             <a href="/settings">Settings</a>
         </div>
+
         <div class="main">
-            <h2>Devices</h2>
-            <div class="device-list">
-                <div class="device">
-                    <span>TV (ON)</span>
-                    <input type="checkbox" checked>
-                </div>
-                <div class="device">
-                    <span>Refrigerator (ON)</span>
-                    <input type="checkbox" checked>
-                </div>
-                <div class="device">
-                    <span>Washing Machine (OFF) </span>
-                    <img src="/static/warning_icon.png" alt="Warning" width="16" height="16">
-                    <input type="checkbox">
-                </div>
-                <div class="device">
-                    <span>Heater (ON)</span>
-                    <input type="checkbox" checked>
-                </div>
+            <div class="page-header">
+                <h2>Devices</h2>
+                <button id="refreshDevicesBtn" type="button" onclick="window.location.reload()">Refresh List</button>
             </div>
+            <p class="subtext">Use ON/OFF buttons to control whether each device's incoming readings are accepted.</p>
+
+            <div class="device-list">
+                {% for d in devices %}
+                <div class="device-card" data-device-id="{{ d[0] }}">
+                    <div class="device-head">
+                        <div class="device-name">{{ d[1] }}</div>
+                        <span class="badge {{ 'on' if d[2] else 'off' }}">{{ 'ON' if d[2] else 'OFF' }}</span>
+                    </div>
+
+                    <div class="device-meta">
+                        Current Power: {{ '%.2f'|format(d[4]) }}W
+                        | Threshold: {{ '%.2f'|format(d[3]) }}W
+                    </div>
+
+                    {% if d[4] > d[3] %}
+                    <p class="warning">Warning: Usage is above expected range.</p>
+                    {% endif %}
+
+                    <button
+                        class="toggle-btn {{ 'on' if d[2] else 'off' }}"
+                        data-device-id="{{ d[0] }}"
+                        data-is-active="{{ 1 if d[2] else 0 }}"
+                        onclick="toggleDevice(this)">
+                        Turn {{ 'OFF' if d[2] else 'ON' }}
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+
+            <p class="note">Tip: Turning a device OFF keeps rows coming in, but voltage/current are forced to 0 for that device.</p>
         </div>
     </div>
+
+<script>
+async function toggleDevice(btn) {
+    const deviceId = Number(btn.dataset.deviceId);
+    const isActive = btn.dataset.isActive === "1";
+    const nextState = !isActive;
+
+    await fetch(`/api/device-states/${deviceId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: nextState })
+    });
+
+    window.location.reload();
+}
+</script>
 </body>
 </html>

@@ -2,9 +2,7 @@
 <html>
 <head>
     <title>Dashboard</title>
-
-    <!-- 03/22 - Auto refresh every 5 seconds -->
-    <!--<meta http-equiv="refresh" content="5"> -->
+    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
     <div class="container">
@@ -17,88 +15,66 @@
         </div>
 
         <div class="main">
-            <h2>Dashboard</h2>
+            <div class="page-header">
+                <h2>Dashboard</h2>
+                <div class="controls">
+                    <label for="windowRange">Compare against: <strong><span id="windowLabel">24</span>h</strong></label>
+                    <input id="windowRange" type="range" min="1" max="168" value="24" step="1">
+                    <button id="reloadBtn" type="button">Refresh Now</button>
+                </div>
+            </div>
+            <p class="subtext">Live readings, warnings, and usage baselines from the selected time window.</p>
 
-            <!-- 03/22 - Summary Tiles (LIVE DATA) -->
             <div class="summary">
                 <div class="tile">
-                    Current Voltage<br>
-                    <strong>
-                        {% if readings %}
-                            {{ readings[0][2] }} V
-                        {% else %}
-                            No data
-                        {% endif %}
-                    </strong>
+                    <div class="tile-label">Current Voltage</div>
+                    <div class="tile-value" id="voltageValue">{% if readings %}{{ readings[0][2] }}{% else %}0{% endif %} V</div>
                 </div>
-
                 <div class="tile">
-                    Current Current<br>
-                    <strong>
-                        {% if readings %}
-                            {{ readings[0][3] }} A
-                        {% else %}
-                            No data
-                        {% endif %}
-                    </strong>
+                    <div class="tile-label">Current Current</div>
+                    <div class="tile-value" id="currentValue">{% if readings %}{{ readings[0][3] }}{% else %}0{% endif %} A</div>
                 </div>
-
                 <div class="tile">
-                    Current Power<br>
-                    <strong>
-                        {% if readings %}
-                            {{ readings[0][2] * readings[0][3] }} W
-                        {% else %}
-                            No data
-                        {% endif %}
-                    </strong>
+                    <div class="tile-label">Current Power</div>
+                    <div class="tile-value" id="powerValue">{% if readings %}{{ readings[0][2] * readings[0][3] }}{% else %}0{% endif %} W</div>
+                </div>
+                <div class="tile">
+                    <div class="tile-label">Active Warnings</div>
+                    <div class="tile-value" id="warningValue">0</div>
                 </div>
             </div>
 
-            <!-- 03/22 - Recent Readings Table -->
-            <h3>Recent Readings</h3>
-            <table border="1" cellpadding="5">
-                <tr>
-                    <th>Device</th>
-                    <th>Timestamp</th>
-                    <th>Voltage (V)</th>
-                    <th>Current (A)</th>
-                    <th>Power (W)</th>
-                </tr>
-
-                {% for r in readings %}
-                <tr>
-                    <td>{{ r[0] }}</td>
-                    <td>{{ r[1] }}</td>
-                    <td>{{ r[2] }}</td>
-                    <td>{{ r[3] }}</td>
-                    <td>{{ r[2] * r[3] }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-
-            <div class="graph-section">
-                <div class="graph">
-                    <h3>Overall Energy Usage (kWh)</h3>
-                    <img src="/static/overall_graph.png?" id="overallGraph" alt="Overall Energy Usage">
-<script>
-    function refreshImages() {
-        var overall = document.getElementById("overallGraph");
-        var individual = document.getElementById("individualGraph");
-
-        var timestamp = new Date().getTime();
-
-        overall.src = "/static/overall_graph.png?t=" + timestamp;
-        individual.src = "/static/individual_graph.png?t=" + timestamp;
-    }
-    // Optional: call the function when needed, or on an interval
-    setInterval(refreshImages, 5000);
-</script>
-
+            <div class="grid-two">
+                <div class="section">
+                    <h3>Recent Readings</h3>
+                    <p class="table-note">This table refreshes every 5 seconds without reloading the page.</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Device</th>
+                                <th>Timestamp</th>
+                                <th>Voltage (V)</th>
+                                <th>Current (A)</th>
+                                <th>Power (W)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="readingsBody">
+                            {% for r in readings %}
+                            <tr>
+                                <td>{{ r[0] }}</td>
+                                <td>{{ r[1] }}</td>
+                                <td>{{ r[2] }}</td>
+                                <td>{{ r[3] }}</td>
+                                <td>{{ r[2] * r[3] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
 
-                <div class="recommendations">
-                    <h3>Recommendations:</h3>
+                <div class="section recommendations">
+                    <h3>Recommendations</h3>
+                    <p class="table-note">Baselines adapt to the selected time window so anomalies are easier to spot.</p>
                     <ul>
                     {% for r in recommendations %}
                         <li>{{ r }}</li>
@@ -107,15 +83,78 @@
                 </div>
             </div>
 
-            <div class="graph-section">
-                <div class="graph">
+            <div class="section" style="margin-top:16px;">
+                <h3>Device Baselines (Window Avg)</h3>
+                <ul id="deviceBaselineList"></ul>
+            </div>
+
+            <div class="graph-grid">
+                <div class="section graph">
+                    <h3>Overall Energy Usage (kWh)</h3>
+                    <img src="/static/overall_graph.png" id="overallGraph" alt="Overall Energy Usage">
+                </div>
+                <div class="section graph">
                     <h3>Individual Energy Usage (kWh)</h3>
-                    <img src="/static/individual_graph.png?" id="individualGraph" alt="Individual Energy Usage">
+                    <img src="/static/individual_graph.png" id="individualGraph" alt="Individual Energy Usage">
                 </div>
             </div>
 
-            <p><em>*Note: The graphs display daily/weekly kWh used</em></p>
+            <p class="note">The graphs and dashboard values refresh independently, so full page reloads are no longer needed.</p>
         </div>
     </div>
+
+<script>
+const windowRange = document.getElementById("windowRange");
+const windowLabel = document.getElementById("windowLabel");
+const readingsBody = document.getElementById("readingsBody");
+const baselineList = document.getElementById("deviceBaselineList");
+
+function refreshGraphs() {
+    const t = Date.now();
+    document.getElementById("overallGraph").src = "/static/overall_graph.png?t=" + t;
+    document.getElementById("individualGraph").src = "/static/individual_graph.png?t=" + t;
+}
+
+async function refreshDashboard() {
+    const windowHours = Number(windowRange.value);
+    windowLabel.textContent = windowHours;
+
+    const res = await fetch(`/api/dashboard-data?window_hours=${windowHours}&limit=10`);
+    const data = await res.json();
+
+    document.getElementById("voltageValue").textContent = `${data.summary.voltage} V`;
+    document.getElementById("currentValue").textContent = `${data.summary.current} A`;
+    document.getElementById("powerValue").textContent = `${data.summary.power} W`;
+
+    const warningCount = data.device_usage.filter(d => d.is_anomaly).length;
+    document.getElementById("warningValue").textContent = `${warningCount} warning(s)`;
+
+    readingsBody.innerHTML = data.readings
+        .map(r => `
+            <tr>
+                <td>${r.device}</td>
+                <td>${r.timestamp}</td>
+                <td>${r.voltage}</td>
+                <td>${r.current}</td>
+                <td>${r.power}</td>
+            </tr>
+        `)
+        .join("");
+
+    baselineList.innerHTML = data.device_usage
+        .map(d => {
+            const alertText = d.is_anomaly ? " - [Warning: Above expected range]" : "";
+            return `<li>${d.device}: ${d.avg_power}W avg (threshold ${d.threshold}W)${alertText}</li>`;
+        })
+        .join("");
+
+    refreshGraphs();
+}
+
+windowRange.addEventListener("input", refreshDashboard);
+document.getElementById("reloadBtn").addEventListener("click", refreshDashboard);
+setInterval(refreshDashboard, 5000);
+refreshDashboard();
+</script>
 </body>
 </html>
