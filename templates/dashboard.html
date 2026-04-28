@@ -23,7 +23,7 @@
                     <button id="reloadBtn" type="button">Refresh Now</button>
                 </div>
             </div>
-            <p class="subtext">Live readings, warnings, and usage baselines from the selected time window.</p>
+            <p class="subtext">Live readings, warnings, baselines, and historical metrics from the selected window.</p>
 
             <div class="summary">
                 <div class="tile">
@@ -42,6 +42,14 @@
                     <div class="tile-label">Active Warnings</div>
                     <div class="tile-value" id="warningValue">0</div>
                 </div>
+            </div>
+
+            <div class="section" style="margin-bottom: 16px;">
+                <div class="section-header">
+                    <h3>Past Time Metrics</h3>
+                    <span class="section-note">Average voltage/current/power for 5 min, 1 hour, 1 day, and 1 week.</span>
+                </div>
+                <div class="history-grid" id="historyGrid"></div>
             </div>
 
             <div class="grid-two">
@@ -108,11 +116,26 @@ const windowRange = document.getElementById("windowRange");
 const windowLabel = document.getElementById("windowLabel");
 const readingsBody = document.getElementById("readingsBody");
 const baselineList = document.getElementById("deviceBaselineList");
+const historyGrid = document.getElementById("historyGrid");
 
 function refreshGraphs() {
     const t = Date.now();
     document.getElementById("overallGraph").src = "/static/overall_graph.png?t=" + t;
     document.getElementById("individualGraph").src = "/static/individual_graph.png?t=" + t;
+}
+
+function renderHistoricalMetrics(items) {
+    historyGrid.innerHTML = items
+        .map(item => `
+            <div class="history-card">
+                <div class="history-title">${item.label}</div>
+                <div class="history-row"><span>Voltage</span><strong>${item.voltage} V</strong></div>
+                <div class="history-row"><span>Current</span><strong>${item.current} A</strong></div>
+                <div class="history-row"><span>Power</span><strong>${item.power} W</strong></div>
+                <div class="history-samples">${item.samples} sample(s)</div>
+            </div>
+        `)
+        .join("");
 }
 
 async function refreshDashboard() {
@@ -148,6 +171,7 @@ async function refreshDashboard() {
         })
         .join("");
 
+    renderHistoricalMetrics(data.historical_metrics || []);
     refreshGraphs();
 }
 

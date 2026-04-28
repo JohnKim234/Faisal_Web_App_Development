@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Reports</title>
+    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
     <div class="container">
@@ -12,35 +13,183 @@
             <a class="active" href="/reports">Reports</a>
             <a href="/settings">Settings</a>
         </div>
+
         <div class="main">
-            <h2>Reports</h2>
-            <div class="summary">
-                <div class="tile">07/10 - 07/17/24</div>
-                <div class="tile">⤓</div>
+            <div class="page-header">
+                <h2>Reports</h2>
+                <div class="controls">
+                    <label for="reportsWindowRange">Report Window: <strong><span id="reportsWindowLabel">24</span>h</strong></label>
+                    <input id="reportsWindowRange" type="range" min="1" max="168" value="24" step="1">
+                    <button id="refreshReportsBtn" type="button">Refresh Report</button>
+                    <button id="downloadPdfBtn" type="button">Download PDF Summary</button>
+                </div>
             </div>
-            <div class="graph-section">
-                <div class="graph">
+
+            <p class="subtext">Nutshell summary of energy activity, device performance, and anomaly detection for your selected time range.</p>
+
+            <div class="summary report-summary-grid">
+                <div class="tile">
+                    <div class="tile-label">Total Readings</div>
+                    <div class="tile-value" id="totalReadingsValue">0</div>
+                </div>
+                <div class="tile">
+                    <div class="tile-label">Active Devices</div>
+                    <div class="tile-value" id="activeDevicesValue">0</div>
+                </div>
+                <div class="tile">
+                    <div class="tile-label">Average Power</div>
+                    <div class="tile-value" id="avgPowerValue">0 W</div>
+                </div>
+                <div class="tile">
+                    <div class="tile-label">Peak Power</div>
+                    <div class="tile-value" id="peakPowerValue">0 W</div>
+                </div>
+            </div>
+
+            <div class="grid-two">
+                <div class="section">
+                    <h3>Top Devices (By Avg Power)</h3>
+                    <p class="table-note">Average and peak values in the selected report window.</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Device</th>
+                                <th>Avg Power</th>
+                                <th>Peak Power</th>
+                                <th>Threshold</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deviceUsageBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="section">
+                    <h3>Daily Trend</h3>
+                    <p class="table-note">Recent day-level average power trend within your selected window.</p>
+                    <ul id="dailyTrendList" class="report-list"></ul>
+                </div>
+            </div>
+
+            <div class="section" style="margin-top: 16px;">
+                <h3>Recent Anomalies</h3>
+                <p class="table-note">Events where device power crossed configured thresholds.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Device</th>
+                            <th>Power</th>
+                            <th>Threshold</th>
+                        </tr>
+                    </thead>
+                    <tbody id="anomaliesBody"></tbody>
+                </table>
+            </div>
+
+            <div class="graph-grid">
+                <div class="section graph">
                     <h3>Overall Energy Usage (kWh)</h3>
-                    <img src="/static/overall_graph.png" alt="Overall Energy Usage">
+                    <img src="/static/overall_graph.png" id="overallGraph" alt="Overall Energy Usage">
                 </div>
-                <div class="recommendations">
-                    <h3>Anomalies:</h3>
-                    <ul>
-                        <li>07/11 - Stove (Excess Energy Use)</li>
-                        <li>07/14 - Fan (Old Model)</li>
-                        <li>07/17 - Microwave (Old Model)</li>
-                        <li>07/19 - Lamp (Excess Energy Use)</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="graph-section">
-                <div class="graph">
+                <div class="section graph">
                     <h3>Individual Energy Usage (kWh)</h3>
-                    <img src="/static/individual_graph.png" alt="Individual Energy Usage">
+                    <img src="/static/individual_graph.png" id="individualGraph" alt="Individual Energy Usage">
                 </div>
             </div>
-            <p><em>*Note: The graphs display kWh used based on timeframe</em></p>
+
+            <p class="note">Tip: Export PDF after selecting the window you want. The file includes a nutshell summary plus top devices and anomalies.</p>
         </div>
     </div>
+
+<script>
+const reportsWindowRange = document.getElementById("reportsWindowRange");
+const reportsWindowLabel = document.getElementById("reportsWindowLabel");
+
+function refreshGraphs() {
+    const t = Date.now();
+    document.getElementById("overallGraph").src = "/static/overall_graph.png?t=" + t;
+    document.getElementById("individualGraph").src = "/static/individual_graph.png?t=" + t;
+}
+
+function renderNoDataRow(colspan, message) {
+    return `<tr><td colspan="${colspan}" class="muted-cell">${message}</td></tr>`;
+}
+
+async function refreshReports() {
+    const hours = Number(reportsWindowRange.value);
+    reportsWindowLabel.textContent = hours;
+
+    const response = await fetch(`/api/reports-summary?window_hours=${hours}`);
+    const data = await response.json();
+    const summary = data.summary || {};
+
+    document.getElementById("totalReadingsValue").textContent = summary.total_readings ?? 0;
+    document.getElementById("activeDevicesValue").textContent = summary.active_devices ?? 0;
+    document.getElementById("avgPowerValue").textContent = `${summary.avg_power ?? 0} W`;
+    document.getElementById("peakPowerValue").textContent = `${summary.peak_power ?? 0} W`;
+
+    const deviceUsage = data.device_usage || [];
+    const anomalies = data.anomalies || [];
+    const trend = data.daily_trend || [];
+
+    const deviceUsageBody = document.getElementById("deviceUsageBody");
+    if (deviceUsage.length === 0) {
+        deviceUsageBody.innerHTML = renderNoDataRow(5, "No device data in this range.");
+    } else {
+        deviceUsageBody.innerHTML = deviceUsage
+            .map(row => {
+                const status = row.is_anomaly ? "Anomaly" : "Normal";
+                return `
+                    <tr>
+                        <td>${row.device}</td>
+                        <td>${row.avg_power} W</td>
+                        <td>${row.peak_power} W</td>
+                        <td>${row.threshold} W</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            })
+            .join("");
+    }
+
+    const anomaliesBody = document.getElementById("anomaliesBody");
+    if (anomalies.length === 0) {
+        anomaliesBody.innerHTML = renderNoDataRow(4, "No anomalies found in this range.");
+    } else {
+        anomaliesBody.innerHTML = anomalies
+            .map(row => `
+                <tr>
+                    <td>${row.timestamp}</td>
+                    <td>${row.device}</td>
+                    <td>${row.power} W</td>
+                    <td>${row.threshold} W</td>
+                </tr>
+            `)
+            .join("");
+    }
+
+    const trendList = document.getElementById("dailyTrendList");
+    if (trend.length === 0) {
+        trendList.innerHTML = '<li>No trend data in this range.</li>';
+    } else {
+        trendList.innerHTML = trend
+            .map(item => `<li>${item.day}: ${item.avg_power} W avg across ${item.samples} sample(s)</li>`)
+            .join("");
+    }
+
+    refreshGraphs();
+}
+
+reportsWindowRange.addEventListener("input", refreshReports);
+document.getElementById("refreshReportsBtn").addEventListener("click", refreshReports);
+document.getElementById("downloadPdfBtn").addEventListener("click", () => {
+    const hours = Number(reportsWindowRange.value);
+    window.location.href = `/api/reports/download?window_hours=${hours}`;
+});
+
+setInterval(refreshReports, 8000);
+refreshReports();
+</script>
 </body>
 </html>
